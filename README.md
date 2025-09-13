@@ -1,6 +1,6 @@
-# OKD 4.20 (SCOS) — Instalação IPI na AWS (Guia para Leigos)
+# OKD 4.20 (SCOS) — Instalação IPI na AWS
 
-Este guia explica, em linguagem simples, como usar o script **`okd-aws-ipi.sh`** para criar um cluster **OKD 4.20 (SCOS)** diretamente na **AWS** via **IPI (Installer‑Provisioned Infrastructure)**. No final há um **diagrama Mermaid** da arquitetura padrão IPI na AWS.
+Este guia explica, como usar o script **`okd-aws-ipi.sh`** para criar um cluster **OKD 4.20 (SCOS)** diretamente na **AWS** via **IPI (Installer‑Provisioned Infrastructure)**.
 
 ---
 
@@ -112,33 +112,33 @@ openshift-install destroy cluster --dir="$INSTALL_DIR"
 flowchart LR
   R53[Route53 Hosted Zone<br/>api / *.apps]:::dns
 
-  subgraph AWS[VPC (10.0.0.0/16)]
-    IGW[Internet Gateway]:::net
-    NAT[NAT Gateway]:::net
+  subgraph AWS["VPC (10.0.0.0/16)"]
+    IGW["Internet Gateway"]:::net
+    NAT["NAT Gateway"]:::net
 
-    subgraph AZ1[AZ1]
-      PUB1[Public Subnet]:::sub
-      PRIV1[Private Subnet]:::sub
+    subgraph AZ1["AZ1"]
+      PUB1["Public Subnet"]:::sub
+      PRIV1["Private Subnet"]:::sub
       M1[(Control Plane 1)]:::node
       W1[(Worker 1)]:::node
     end
 
-    subgraph AZ2[AZ2]
-      PUB2[Public Subnet]:::sub
-      PRIV2[Private Subnet]:::sub
+    subgraph AZ2["AZ2"]
+      PUB2["Public Subnet"]:::sub
+      PRIV2["Private Subnet"]:::sub
       M2[(Control Plane 2)]:::node
       W2[(Worker 2)]:::node
     end
 
-    subgraph AZ3[AZ3]
-      PUB3[Public Subnet]:::sub
-      PRIV3[Private Subnet]:::sub
+    subgraph AZ3["AZ3"]
+      PUB3["Public Subnet"]:::sub
+      PRIV3["Private Subnet"]:::sub
       M3[(Control Plane 3)]:::node
       W3[(Worker 3)]:::node
     end
 
-    NLBAPI[NLB - api:6443]:::lb
-    NLBAPPS[LB - *.apps:80/443]:::lb
+    NLBAPI["NLB - api:6443"]:::lb
+    NLBAPPS["LB - *.apps:80/443"]:::lb
     BOOT[(Bootstrap - temporário)]:::boot
   end
 
