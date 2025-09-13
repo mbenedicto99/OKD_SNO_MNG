@@ -1,4 +1,5 @@
-# Comparativo de Arquiteturas na AWS
+# Comparativo de Arquiteturas OPENSHIFT na AWS
+
 **ROSA vs IPI vs UPI Manual (3 CP + 3 W)**  
 > Objetivo: visualizar qual é o **ambiente menos complexo** para testes e integrações.
 
@@ -96,21 +97,21 @@ flowchart LR
       W1[(Worker 1)]:::node
     end
 
-    subgraph AZ2["AZ2"]
-      PUB2["Public Subnet"]:::sub
-      PRIV2["Private Subnet"]:::sub
+    subgraph AZ2[AZ2]
+      PUB2[Public Subnet]:::sub
+      PRIV2[Private Subnet]:::sub
       M2[(Control Plane 2)]:::node
       W2[(Worker 2)]:::node
     end
 
-    subgraph AZ3["AZ3"]
-      PUB3["Public Subnet"]:::sub
-      PRIV3["Private Subnet"]:::sub
+    subgraph AZ3[AZ3]
+      PUB3[Public Subnet]:::sub
+      PRIV3[Private Subnet]:::sub
       M3[(Control Plane 3)]:::node
       W3[(Worker 3)]:::node
     end
 
-    BOOT[(Bootstrap<br/>(temporário))]:::boot
+    BOOT[(Bootstrap Temporario)]:::boot
     NLBAPI["NLB - API (6443)"]:::lb
     ALBAPPS["ALB/NLB - *.apps (80/443)"]:::lb
   end
@@ -143,6 +144,7 @@ flowchart LR
   classDef node fill:#fff,stroke:#555,color:#000;
   classDef lb fill:#ffe,stroke:#aa6,color:#000;
   classDef boot fill:#fde,stroke:#d66,color:#000;
+
 ```
 
 **Características resumidas**
