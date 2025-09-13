@@ -10,44 +10,42 @@
 ## 1) AWS ROSA (Red Hat OpenShift Service on AWS) — Gerenciado
 ```mermaid
 flowchart LR
-  R53[Route53 Hosted Zone<br/>api / *.apps]:::dns
+  R53["Route53 Hosted Zone<br/>api / *.apps"]:::dns
 
-  subgraph AWS[VPC (10.0.0.0/16)]
-    IGW[Internet Gateway]:::net
-    NAT[NAT Gateway]:::net
+  subgraph AWS["VPC (10.0.0.0/16)"]
+    IGW["Internet Gateway"]:::net
+    NAT["NAT Gateway"]:::net
 
-    subgraph AZ1[AZ1]
-      PUB1[Public Subnet]:::sub
-      PRIV1[Private Subnet]:::sub
+    subgraph AZ1["AZ1"]
+      PUB1["Public Subnet"]:::sub
+      PRIV1["Private Subnet"]:::sub
       M1[(Control Plane 1)]:::node
       W1[(Worker Pool)]:::node
     end
 
-    subgraph AZ2[AZ2]
-      PUB2[Public Subnet]:::sub
-      PRIV2[Private Subnet]:::sub
+    subgraph AZ2["AZ2"]
+      PUB2["Public Subnet"]:::sub
+      PRIV2["Private Subnet"]:::sub
       M2[(Control Plane 2)]:::node
       W2[(Worker Pool)]:::node
     end
 
-    subgraph AZ3[AZ3]
-      PUB3[Public Subnet]:::sub
-      PRIV3[Private Subnet]:::sub
+    subgraph AZ3["AZ3"]
+      PUB3["Public Subnet"]:::sub
+      PRIV3["Private Subnet"]:::sub
       M3[(Control Plane 3)]:::node
       W3[(Worker Pool)]:::node
     end
 
-    NLBAPI[NLB - API (6443)]:::lb
-    ALBAPPS[ALB - *.apps (80/443)]:::lb
+    NLBAPI["NLB - API (6443)"]:::lb
+    ALBAPPS["ALB *.apps (80/443)"]:::lb
   end
 
-  RH[Red Hat SRE<br/>(Gestão & Patching)]:::mgmt
+  RH["Red Hat SRE <br/> (Gestão & Patching)"]:::mgmt
 
-  %% DNS → LBs
   R53 --> NLBAPI
   R53 --> ALBAPPS
 
-  %% LBs → CP/Workers
   NLBAPI --> M1
   NLBAPI --> M2
   NLBAPI --> M3
@@ -56,7 +54,6 @@ flowchart LR
   ALBAPPS --> W2
   ALBAPPS --> W3
 
-  %% Internet paths
   PUB1 --> IGW
   PUB2 --> IGW
   PUB3 --> IGW
@@ -64,10 +61,9 @@ flowchart LR
   PRIV2 --> NAT
   PRIV3 --> NAT
 
-  %% Gestão (SRE) sobre o Control Plane
-  RH -. observabilidade/patching .-> M1
-  RH -. .-> M2
-  RH -. .-> M3
+  RH -. "observabilidade/patching" .-> M1
+  RH -.-> M2
+  RH -.-> M3
 
   classDef dns fill:#eef,stroke:#88a,color:#000;
   classDef net fill:#efe,stroke:#6a6,color:#000;
@@ -87,43 +83,41 @@ flowchart LR
 ## 2) AWS IPI (Installer‑Provisioned Infrastructure) — Automático (OKD/OpenShift)
 ```mermaid
 flowchart LR
-  R53[Route53 Hosted Zone<br/>api / *.apps]:::dns
+  R53["Route53 Hosted Zone<br/>api / *.apps"]:::dns
 
-  subgraph AWS[VPC (10.0.0.0/16)]
-    IGW[Internet Gateway]:::net
-    NAT[NAT Gateway]:::net
+  subgraph AWS["VPC (10.0.0.0/16)"]
+    IGW["Internet Gateway"]:::net
+    NAT["NAT Gateway"]:::net
 
-    subgraph AZ1[AZ1]
-      PUB1[Public Subnet]:::sub
-      PRIV1[Private Subnet]:::sub
+    subgraph AZ1["AZ1"]
+      PUB1["Public Subnet"]:::sub
+      PRIV1["Private Subnet"]:::sub
       M1[(Control Plane 1)]:::node
       W1[(Worker 1)]:::node
     end
 
-    subgraph AZ2[AZ2]
-      PUB2[Public Subnet]:::sub
-      PRIV2[Private Subnet]:::sub
+    subgraph AZ2["AZ2"]
+      PUB2["Public Subnet"]:::sub
+      PRIV2["Private Subnet"]:::sub
       M2[(Control Plane 2)]:::node
       W2[(Worker 2)]:::node
     end
 
-    subgraph AZ3[AZ3]
-      PUB3[Public Subnet]:::sub
-      PRIV3[Private Subnet]:::sub
+    subgraph AZ3["AZ3"]
+      PUB3["Public Subnet"]:::sub
+      PRIV3["Private Subnet"]:::sub
       M3[(Control Plane 3)]:::node
       W3[(Worker 3)]:::node
     end
 
     BOOT[(Bootstrap<br/>(temporário))]:::boot
-    NLBAPI[NLB - API (6443)]:::lb
-    ALBAPPS[ALB/NLB - *.apps (80/443)]:::lb
+    NLBAPI["NLB - API (6443)"]:::lb
+    ALBAPPS["ALB/NLB - *.apps (80/443)"]:::lb
   end
 
-  %% DNS → LBs
   R53 --> NLBAPI
   R53 --> ALBAPPS
 
-  %% LBs → nós
   NLBAPI --> M1
   NLBAPI --> M2
   NLBAPI --> M3
@@ -132,12 +126,10 @@ flowchart LR
   ALBAPPS --> W2
   ALBAPPS --> W3
 
-  %% Bootstrap ajuda a formar o CP
   BOOT --> M1
   BOOT --> M2
   BOOT --> M3
 
-  %% Internet paths
   PUB1 --> IGW
   PUB2 --> IGW
   PUB3 --> IGW
@@ -163,39 +155,39 @@ flowchart LR
 ## 3) UPI Manual (Instalação Manual — 3 Control Planes + 3 Workers)
 ```mermaid
 flowchart LR
-  YOU[Você/DevOps<br/>Terraform/CloudFormation]:::mgmt
-  R53[Route53 Hosted Zone]:::dns
+  YOU["Você/DevOps<br/>Terraform/CloudFormation"]:::mgmt
+  R53["Route53 Hosted Zone"]:::dns
 
-  subgraph AWS[VPC (10.0.0.0/16) — Você provisiona tudo]
-    IGW[Internet Gateway]:::net
-    NAT[NAT Gateway]:::net
-    SG[Security Groups / IAM]:::svc
+  subgraph AWS["VPC (10.0.0.0/16) — Você provisiona tudo"]
+    IGW["Internet Gateway"]:::net
+    NAT["NAT Gateway"]:::net
+    SG["Security Groups / IAM"]:::svc
     S3[(S3 - Assets/Ignition)]:::svc
 
-    subgraph AZ1[AZ1]
-      PUB1[Public Subnet]:::sub
-      PRIV1[Private Subnet]:::sub
+    subgraph AZ1["AZ1"]
+      PUB1["Public Subnet"]:::sub
+      PRIV1["Private Subnet"]:::sub
       M1[(Control Plane 1)]:::node
       W1[(Worker 1)]:::node
-      B1[(Bootstrap (temp))]:::boot
+      B1[("Bootstrap (temp)")]:::boot
     end
 
-    subgraph AZ2[AZ2]
-      PUB2[Public Subnet]:::sub
-      PRIV2[Private Subnet]:::sub
+    subgraph AZ2["AZ2"]
+      PUB2["Public Subnet"]:::sub
+      PRIV2["Private Subnet"]:::sub
       M2[(Control Plane 2)]:::node
       W2[(Worker 2)]:::node
     end
 
-    subgraph AZ3[AZ3]
-      PUB3[Public Subnet]:::sub
-      PRIV3[Private Subnet]:::sub
+    subgraph AZ3["AZ3"]
+      PUB3["Public Subnet"]:::sub
+      PRIV3["Private Subnet"]:::sub
       M3[(Control Plane 3)]:::node
       W3[(Worker 3)]:::node
     end
 
-    NLBAPI[NLB - API (6443)]:::lb
-    ALBAPPS[ALB/NLB - *.apps (80/443)]:::lb
+    NLBAPI["NLB - API (6443)"]:::lb
+    ALBAPPS["ALB/NLB - *.apps (80/443)"]:::lb
   end
 
   %% Provisionamento manual
