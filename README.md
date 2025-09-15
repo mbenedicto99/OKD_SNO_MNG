@@ -1,116 +1,90 @@
-# OKD 4.20 (SCOS) — Instalação IPI na AWS
+# Comparativo de Arquiteturas OPENSHIFT na AWS
 
-Este guia explica, como usar o script **`okd-aws-ipi.sh`** para criar um cluster **OKD 4.20 (SCOS)** diretamente na **AWS** via **IPI (Installer‑Provisioned Infrastructure)**.
+**ROSA vs IPI vs UPI Manual (3 CP + 3 W)**  
+> Objetivo: visualizar qual é o **ambiente menos complexo** para testes e integrações.
 
----
-
-## O que o script faz
-- Baixa os binários do OKD (**oc** e **openshift-install**).
-- Gera o arquivo `install-config.yaml` para **AWS (sa-east-1)**.
-- Cria o cluster (VPC, sub-redes, balanceadores, instâncias EC2, DNS no Route53 etc.).
-- Mostra **KUBECONFIG**, **senha do kubeadmin** e **links** (API e Console).
-
-> Dois modos de criação:
-> - **default**: 3 masters + 3 workers (padrão para testes completos).
-> - **compact**: 3 masters e **0 workers** (custo menor); o script torna os masters agendáveis.
+- **Menos complexo → Mais complexo:** **ROSA** (gerenciado) → **IPI** (automático) → **UPI Manual** (você provisiona tudo).
+- **Observação importante:** **SNO** significa *Single Node OpenShift* (1 nó). O pedido “SNO instalado manualmente com 3 workers e 3 control-planes” **não é SNO**. Abaixo, apresentamos a arquitetura **UPI Manual (3 control planes + 3 workers)**, que corresponde ao cenário desejado (instalação manual com 3+3).
 
 ---
 
-## Pré‑requisitos (uma vez)
-- **Conta AWS** com permissão em: EC2, IAM, VPC, ELB/NLB, Route53, S3.
-- **Hosted Zone** no **Route53** do seu domínio (ex.: `example.com`).
-- **AWS CLI** configurado: `aws configure` (Access Key, Secret, region).
-- Chave **SSH pública** em `~/.ssh/id_rsa.pub` (ou aponte outra pelo ambiente).
-
-Instale utilitários no Ubuntu 24.x:
-```bash
-sudo apt-get update
-sudo apt-get install -y jq yq curl tar unzip
-aws sts get-caller-identity   # deve retornar info da sua conta
-```
-
----
-
-## Como usar o script (passo a passo)
-1. **Crie** o arquivo `okd-aws-ipi.sh` com o conteúdo que você recebeu anteriormente.
-2. **Permissão de execução**:
-   ```bash
-   chmod +x okd-aws-ipi.sh
-   ```
-3. **Defina variáveis mínimas** (ajuste nome e domínio):
-   ```bash
-   export CLUSTER_NAME=okd
-   export BASE_DOMAIN=seu-dominio.com.br      # precisa existir no Route53
-   export AWS_REGION=sa-east-1
-   export MODE=default                         # ou compact (mais barato)
-   # (opcional) export OKD_VERSION="4.20.0-okd-scos.ec.15"
-   # (opcional) export CP_TYPE="m5.xlarge"; export WK_TYPE="m5.large"
-   # (lab)      export PULL_SECRET='{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}'
-   ```
-4. **Execute**:
-   ```bash
-   ./okd-aws-ipi.sh
-   ```
-
-> **Tempo**: a criação pode levar vários minutos (a AWS vai subir toda a infraestrutura).
-
----
-
-## Saída esperada
-- Pasta de trabalho: `okd-aws/<CLUSTER_NAME>` com artefatos.
-- No final, o script imprime algo como:
-  - `KUBECONFIG: okd-aws/okd/auth/kubeconfig`
-  - `Senha kubeadmin: XXXXX-XXXXX-...`
-  - `API: https://api.okd.seu-dominio.com.br:6443`
-  - `Console: https://console-openshift-console.apps.okd.seu-dominio.com.br`
-
----
-
-## Acessando o cluster pela CLI
-```bash
-export KUBECONFIG=$PWD/okd-aws/okd/auth/kubeconfig
-oc whoami
-oc get nodes
-oc get co        # ClusterOperators — aguarde ficarem Available
-```
-
-## Acessando o Console Web
-- Abra: `https://console-openshift-console.apps.<CLUSTER>.<DOMÍNIO>`
-- Usuário: `kubeadmin`
-- Senha: (a que o script mostrou no final)
-
----
-
-## Escolha do modo
-- **MODE=default** → 3 masters + 3 workers (mais “completo” para testes de Operators/rotas/upgrade).
-- **MODE=compact** → 3 masters, **0 workers** (reduz custo). O script já aplica:
-  ```bash
-  oc patch schedulers.config.openshift.io cluster --type merge -p '{"spec":{"mastersSchedulable": true}}'
-  ```
-
----
-
-## Fique Atento
-- **Hosted Zone**: o domínio `BASE_DOMAIN` precisa existir no Route53 antes de rodar.
-- **Custos**: *default* cria ~6 VMs + balanceadores; *compact* cria ~3 VMs + balanceadores.
-- **Permissões AWS**: se faltar permissão (IAM/ELB/Route53), a criação falha; ajuste e rode de novo com o mesmo `--dir`.
-- **Pull secret**: para laboratório, pode usar o “fake”; para Operators da Red Hat, use um pull secret real.
-
----
-
-## Como remover (evitar custos)
-```bash
-export INSTALL_DIR=$PWD/okd-aws/okd   # ajuste se mudou o nome
-openshift-install destroy cluster --dir="$INSTALL_DIR"
-```
-
----
-
-## Arquitetura (Mermaid) — OKD IPI na AWS (padrão)
-
+## 1) AWS ROSA (Red Hat OpenShift Service on AWS) — Gerenciado
 ```mermaid
 flowchart LR
-  R53[Route53 Hosted Zone<br/>api / *.apps]:::dns
+  R53["Route53 Hosted Zone<br/>api / *.apps"]:::dns
+
+  subgraph AWS["VPC (10.0.0.0/16)"]
+    IGW["Internet Gateway"]:::net
+    NAT["NAT Gateway"]:::net
+
+    subgraph AZ1["AZ1"]
+      PUB1["Public Subnet"]:::sub
+      PRIV1["Private Subnet"]:::sub
+      M1[(Control Plane 1)]:::node
+      W1[(Worker Pool)]:::node
+    end
+
+    subgraph AZ2["AZ2"]
+      PUB2["Public Subnet"]:::sub
+      PRIV2["Private Subnet"]:::sub
+      M2[(Control Plane 2)]:::node
+      W2[(Worker Pool)]:::node
+    end
+
+    subgraph AZ3["AZ3"]
+      PUB3["Public Subnet"]:::sub
+      PRIV3["Private Subnet"]:::sub
+      M3[(Control Plane 3)]:::node
+      W3[(Worker Pool)]:::node
+    end
+
+    NLBAPI["NLB - API (6443)"]:::lb
+    ALBAPPS["ALB *.apps (80/443)"]:::lb
+  end
+
+  RH["Red Hat SRE <br/> (Gestão & Patching)"]:::mgmt
+
+  R53 --> NLBAPI
+  R53 --> ALBAPPS
+
+  NLBAPI --> M1
+  NLBAPI --> M2
+  NLBAPI --> M3
+
+  ALBAPPS --> W1
+  ALBAPPS --> W2
+  ALBAPPS --> W3
+
+  PUB1 --> IGW
+  PUB2 --> IGW
+  PUB3 --> IGW
+  PRIV1 --> NAT
+  PRIV2 --> NAT
+  PRIV3 --> NAT
+
+  RH -. "observabilidade/patching" .-> M1
+  RH -.-> M2
+  RH -.-> M3
+
+  classDef dns fill:#eef,stroke:#88a,color:#000;
+  classDef net fill:#efe,stroke:#6a6,color:#000;
+  classDef sub fill:#f7f7f7,stroke:#bbb,color:#000;
+  classDef node fill:#fff,stroke:#555,color:#000;
+  classDef lb fill:#ffe,stroke:#aa6,color:#000;
+  classDef mgmt fill:#e8f4ff,stroke:#69c,color:#000;
+```
+
+**Características resumidas**
+- **Control plane**: gerenciado pela Red Hat (menos esforço operacional).
+- **Infra AWS**: criada/operada em sua conta, mas com automações e SRE da Red Hat.
+- **Complexidade**: **baixa** para o usuário (poucos passos, SLAs/patching gerenciados).
+
+---
+
+## 2) AWS IPI (Installer‑Provisioned Infrastructure) — Automático (OKD/OpenShift)
+```mermaid
+flowchart LR
+  R53["Route53 Hosted Zone<br/>api / *.apps"]:::dns
 
   subgraph AWS["VPC (10.0.0.0/16)"]
     IGW["Internet Gateway"]:::net
@@ -121,6 +95,83 @@ flowchart LR
       PRIV1["Private Subnet"]:::sub
       M1[(Control Plane 1)]:::node
       W1[(Worker 1)]:::node
+    end
+
+    subgraph AZ2[AZ2]
+      PUB2[Public Subnet]:::sub
+      PRIV2[Private Subnet]:::sub
+      M2[(Control Plane 2)]:::node
+      W2[(Worker 2)]:::node
+    end
+
+    subgraph AZ3[AZ3]
+      PUB3[Public Subnet]:::sub
+      PRIV3[Private Subnet]:::sub
+      M3[(Control Plane 3)]:::node
+      W3[(Worker 3)]:::node
+    end
+
+    BOOT[(Bootstrap Temporario)]:::boot
+    NLBAPI["NLB - API (6443)"]:::lb
+    ALBAPPS["ALB/NLB - *.apps (80/443)"]:::lb
+  end
+
+  R53 --> NLBAPI
+  R53 --> ALBAPPS
+
+  NLBAPI --> M1
+  NLBAPI --> M2
+  NLBAPI --> M3
+
+  ALBAPPS --> W1
+  ALBAPPS --> W2
+  ALBAPPS --> W3
+
+  BOOT --> M1
+  BOOT --> M2
+  BOOT --> M3
+
+  PUB1 --> IGW
+  PUB2 --> IGW
+  PUB3 --> IGW
+  PRIV1 --> NAT
+  PRIV2 --> NAT
+  PRIV3 --> NAT
+
+  classDef dns fill:#eef,stroke:#88a,color:#000;
+  classDef net fill:#efe,stroke:#6a6,color:#000;
+  classDef sub fill:#f7f7f7,stroke:#bbb,color:#000;
+  classDef node fill:#fff,stroke:#555,color:#000;
+  classDef lb fill:#ffe,stroke:#aa6,color:#000;
+  classDef boot fill:#fde,stroke:#d66,color:#000;
+
+```
+
+**Características resumidas**
+- **Control plane**: você opera (patch/upgrade com `openshift-install`/`oc`).  
+- **Infra AWS**: criada automaticamente pelo instalador (VPC, sub-redes, LB, IAM, DNS, EC2 etc.).  
+- **Complexidade**: **média** (menos esforço que UPI, mais que ROSA).
+
+---
+
+## 3) UPI Manual (Instalação Manual — 3 Control Planes + 3 Workers)
+```mermaid
+flowchart LR
+  YOU["Você/DevOps<br/>Terraform/CloudFormation"]:::mgmt
+  R53["Route53 Hosted Zone"]:::dns
+
+  subgraph AWS["VPC (10.0.0.0/16) — Você provisiona tudo"]
+    IGW["Internet Gateway"]:::net
+    NAT["NAT Gateway"]:::net
+    SG["Security Groups / IAM"]:::svc
+    S3[(S3 - Assets/Ignition)]:::svc
+
+    subgraph AZ1["AZ1"]
+      PUB1["Public Subnet"]:::sub
+      PRIV1["Private Subnet"]:::sub
+      M1[(Control Plane 1)]:::node
+      W1[(Worker 1)]:::node
+      B1[("Bootstrap (temp)")]:::boot
     end
 
     subgraph AZ2["AZ2"]
@@ -137,34 +188,40 @@ flowchart LR
       W3[(Worker 3)]:::node
     end
 
-    NLBAPI["NLB - api:6443"]:::lb
-    NLBAPPS["LB - *.apps:80/443"]:::lb
-    BOOT[(Bootstrap - temporário)]:::boot
+    NLBAPI["NLB - API (6443)"]:::lb
+    ALBAPPS["ALB/NLB - *.apps (80/443)"]:::lb
   end
+
+  %% Provisionamento manual
+  YOU --> SG
+  YOU --> NLBAPI
+  YOU --> ALBAPPS
+  YOU --> S3
+  YOU --> R53
 
   %% DNS → LBs
   R53 --> NLBAPI
-  R53 --> NLBAPPS
+  R53 --> ALBAPPS
 
   %% LBs → nós
   NLBAPI --> M1
   NLBAPI --> M2
   NLBAPI --> M3
 
-  NLBAPPS --> W1
-  NLBAPPS --> W2
-  NLBAPPS --> W3
+  ALBAPPS --> W1
+  ALBAPPS --> W2
+  ALBAPPS --> W3
 
-  %% Bootstrap ajuda a formar o controle
-  BOOT --> M1
-  BOOT --> M2
-  BOOT --> M3
+  %% Bootstrap/ignitions
+  S3 -. Ignition/manifests .-> B1
+  B1 --> M1
+  B1 --> M2
+  B1 --> M3
 
-  %% Rotas de internet
+  %% Internet paths
   PUB1 --> IGW
   PUB2 --> IGW
   PUB3 --> IGW
-
   PRIV1 --> NAT
   PRIV2 --> NAT
   PRIV3 --> NAT
@@ -175,58 +232,33 @@ flowchart LR
   classDef node fill:#fff,stroke:#555,color:#000;
   classDef lb fill:#ffe,stroke:#aa6,color:#000;
   classDef boot fill:#fde,stroke:#d66,color:#000;
+  classDef mgmt fill:#e8f4ff,stroke:#69c,color:#000;
+  classDef svc fill:#eefcff,stroke:#69c,color:#000;
 ```
+
+**Características resumidas**
+- **Control plane**: você opera tudo (instalação, patches/upgrade, ciclo de vida).  
+- **Infra AWS**: **100% provisionada por você** (VPC, sub-redes, roteamento, LB, IAM, DNS, EC2, S3, SGs…).  
+- **Complexidade**: **alta** (maior controle e esforço).
 
 ---
 
-## Exemplos de `install-config.yaml` (opcional)
+## Comparativo rápido (complexidade e responsabilidade)
 
-**Default (3 masters + 3 workers):**
-```yaml
-apiVersion: v1
-baseDomain: exemplo.com
-metadata:
-  name: okd
-platform:
-  aws:
-    region: sa-east-1
-pullSecret: '<pull secret ou o fake de lab>'
-sshKey: |
-  <sua chave SSH pública>
-controlPlane:
-  name: master
-  replicas: 3
-  platform:
-    aws:
-      type: m5.xlarge
-compute:
-- name: worker
-  replicas: 3
-  platform:
-    aws:
-      type: m5.large
-networking:
-  networkType: OVNKubernetes
-```
+- **ROSA (gerenciado)**  
+  - **Complexidade**: **Baixa**  
+  - **Quem cuida do control plane**: Red Hat SRE  
+  - **Infra**: criada no seu AWS, com automação/gestão da Red Hat  
+  - **Quando usar**: menor time-to-value, SLO/SLA gerenciados, suporte oficial
 
-**Compact (3 masters, 0 workers):**
-```yaml
-compute:
-- name: worker
-  replicas: 0
-```
-Depois da instalação, permitir agendamento em masters:
-```bash
-oc patch schedulers.config.openshift.io cluster --type merge -p '{"spec":{"mastersSchedulable": true}}'
-```
+- **IPI (automático)**  
+  - **Complexidade**: **Média**  
+  - **Quem cuida do control plane**: Você (com ferramentas do instalador)  
+  - **Infra**: criada automaticamente pelo instalador  
+  - **Quando usar**: PoC/padrão rápido, ainda com bastante controle
 
----
-
-### Próximos passos (sugestões)
-- Criar *projects* e *namespaces*, instalar Operators, criar *Routes* e *Deployments*.
-- Configurar *User Workload Monitoring* e Storage para o Image Registry (PVC/NFS/ODF).
-- Testar integrações (ex.: **Rundeck**) via API/CLI do cluster.
-
----
-
-*Este documento é um guia prático para fins de laboratório/PoC.*
+- **UPI Manual (3 CP + 3 W)**  
+  - **Complexidade**: **Alta**  
+  - **Quem cuida do control plane**: Você (total)  
+  - **Infra**: você define e mantém tudo (IaC recomendado)  
+  - **Quando usar**: ambientes restritos, VPC existente, requisitos especiais
