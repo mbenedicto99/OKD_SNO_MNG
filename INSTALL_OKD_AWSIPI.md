@@ -5,7 +5,7 @@ No modo **IPI**, o **instalador do OpenShift** cria automaticamente toda a infra
 
 ---
 
-## Pré‑requisitos (checklist rápido)
+## Pré‑requisitos
 - **Conta AWS** com permissão para criar EC2, IAM, VPC, ELB, S3 e Route 53.
 - **Domínio** com **Hosted Zone pública no Route 53** (ex.: `minhaempresa.com`) para servir de **baseDomain**.
 - **Pull Secret da Red Hat** (baixe no OpenShift Cluster Manager).
@@ -13,7 +13,7 @@ No modo **IPI**, o **instalador do OpenShift** cria automaticamente toda a infra
 
 ---
 
-## Passo a passo (bem direto)
+## Passo a passo
 ### 1) Preparar o Ubuntu
 ```bash
 sudo apt update && sudo apt install -y unzip curl jq
@@ -22,7 +22,7 @@ sudo apt update && sudo apt install -y unzip curl jq
 curl -Ls https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip
 unzip -q awscliv2.zip && sudo ./aws/install
 
-# Ferramentas OpenShift (instalador e oc)
+# Ferramentas OpenShift
 cd ~/Downloads
 curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz
 curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz
@@ -76,17 +76,17 @@ openshift-install destroy cluster --dir .
 
 ---
 
-## Visão rápida (desenho)
+## Arquitetura
 ```mermaid
 graph TD
-U[Seu notebook (Ubuntu 24)] --> I[openshift-install (IPI)]
-I --> AWS[AWS (Infra automática)]
-AWS --> R53[Route 53 (baseDomain)]
-AWS --> VPC[VPC + Subnets]
-VPC --> LB[Load Balancers (API/Ingress)]
-VPC --> BS[Bootstrap (temporário)]
-VPC --> CP[3 nós Control Plane]
-VPC --> WK[Workers (ex.: 3)]
+U["Client"] --> I["openshift-install (IPI)"]
+I --> AWS["AWS (Infra automática)"]
+AWS --> R53["Route 53 (baseDomain)"]
+AWS --> VPC["VPC + Subnets"]
+VPC --> LB["Load Balancers (API/Ingress)"]
+VPC --> BS["Bootstrap (temporário)"]
+VPC --> CP["3 nós Control Plane"]
+VPC --> WK['Workers (ex.: 3)"]
 R53 --> LB
 ```
 
