@@ -90,7 +90,7 @@ oc get co        # ClusterOperators — aguarde ficarem Available
 
 ---
 
-## Dicas e pegadinhas
+## Fique Atento
 - **Hosted Zone**: o domínio `BASE_DOMAIN` precisa existir no Route53 antes de rodar.
 - **Custos**: *default* cria ~6 VMs + balanceadores; *compact* cria ~3 VMs + balanceadores.
 - **Permissões AWS**: se faltar permissão (IAM/ELB/Route53), a criação falha; ajuste e rode de novo com o mesmo `--dir`.
