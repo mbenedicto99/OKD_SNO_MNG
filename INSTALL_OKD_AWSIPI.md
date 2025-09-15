@@ -86,7 +86,7 @@ AWS --> VPC["VPC + Subnets"]
 VPC --> LB["Load Balancers (API/Ingress)"]
 VPC --> BS["Bootstrap (temporário)"]
 VPC --> CP["3 nós Control Plane"]
-VPC --> WK['Workers (ex.: 3)"]
+VPC --> WK["Workers (ex.: 3)"]
 R53 --> LB
 ```
 
