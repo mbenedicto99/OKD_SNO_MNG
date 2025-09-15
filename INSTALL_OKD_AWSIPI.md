@@ -153,7 +153,7 @@ sshKey: 'ssh-ed25519 AAAA...seu_ssh_publico...'  # Opcional, mas recomendado
 
 ---
 
-## Dicas finais
+## Dicas
 - **IPI** é ideal para começar (menos passos manuais). Para ambientes com controles rígidos de rede/IAM, avalie **UPI** no futuro.
 - Prefira **regiões com 3+ AZs** para alta disponibilidade.
 - Salve com cuidado os arquivos em `auth/` (contém `kubeconfig` e senha do `kubeadmin`).
