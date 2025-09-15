@@ -14,7 +14,7 @@ No modo **IPI**, o **instalador do OpenShift** cria automaticamente toda a infra
 ---
 
 ## Passo a passo
-### 1) Preparar o Ubuntu
+### 1) Preparar o Linux
 ```bash
 sudo apt update && sudo apt install -y unzip curl jq
 
