@@ -9,7 +9,7 @@ No modo **IPI**, o **instalador do OpenShift** cria automaticamente toda a infra
 - **Conta AWS** com permissão para criar EC2, IAM, VPC, ELB, S3 e Route 53.
 - **Domínio** com **Hosted Zone pública no Route 53** (ex.: `minhaempresa.com`) para servir de **baseDomain**.
 - **Pull Secret da Red Hat** (baixe no OpenShift Cluster Manager).
-- **Ubuntu 24.04** com `awscli`, `openshift-install` e `oc` instalados.
+- **Client Linux** com `awscli`, `openshift-install` e `oc` instalados.
 
 ---
 
